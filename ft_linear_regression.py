@@ -14,10 +14,11 @@ class LinearRegression:
         self.normalized_x, self.normalized_y = [], []
         self.y_pred = []
         self.debugMode = debug
+        self.cost = 0.0
         self.normalize()
         self.train(epochs)
         self.saveParameters()
-        self.showDataOnGraph()
+        self.showDataOnGraph(epochs)
 
     def normalize(self):
         max_x, min_x = max(self.X), min(self.X)
@@ -55,9 +56,9 @@ class LinearRegression:
             self.theta0 -= self.learning_rate * grad0
             self.theta1 -= self.learning_rate * grad1
             
-            if self.debugMode and epoch % 100 == 0:
-                cost = sum((self.estimatePrice(self.normalized_x[i]) - self.normalized_y[i])**2 for i in range(self.m)) / (2 * self.m)
-                print(f"Epoch {epoch}, Cost: {cost:.4f}, θ0={self.theta0:.4f}, θ1={self.theta1:.4f}")
+            self.cost = sum((self.estimatePrice(self.normalized_x[i]) - self.normalized_y[i])**2 for i in range(self.m)) / (2 * self.m)
+            if self.debugMode and epoch % 200 == 0:
+                print(f"Epoch {epoch}, Cost: {self.cost:.4f}, θ0={self.theta0:.4f}, θ1={self.theta1:.4f}")
 
         self.denormalize_W_and_B()
 
@@ -69,17 +70,24 @@ class LinearRegression:
         with open("model.json", "w") as f:
             json.dump(params, f)
     
-    def showDataOnGraph(self):
-        # Data
-        plt.scatter(self.X.values, self.Y.values, color="blue", marker="o")
-        
-        # Regression
-        self.y_pred = [self.estimatePrice(x) for x in self.X.values]
-        plt.plot(self.X.values, self.y_pred, color="red", label="Linear Regression Model")
+    def showDataOnGraph(self, epochs):
+        import matplotlib.pyplot as plt
 
-        plt.title("")
-        plt.xlabel("Price")
-        plt.ylabel("Car Mileage")
+        # Scatter plot: Original data
+        plt.scatter(self.X.values, self.Y.values, color="blue", marker="o", label="Actual Data")
+        
+        # Line plot: Regression line
+        self.y_pred = [self.estimatePrice(x) for x in self.X.values]
+        plt.plot(self.X.values, self.y_pred, color="red", label="Model Regression")
+
+        # Titles
+        plt.title("Price vs Car Mileage")
+        plt.xlabel("Car Mileage")
+        plt.ylabel("Price")
+
+        textstr = f"Epoch: {epochs}\nCost: {self.cost:.4f}"
+        plt.gcf().text(0.02, 0.95, textstr, fontsize=10, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5))
+        plt.legend()
         plt.show()
 
     def predict(self, km: float):
@@ -87,7 +95,7 @@ class LinearRegression:
 
 def main():
     data = pd.read_csv("data/data.csv")
-    LinearRegression(data, epochs=2000, debug=True)
+    LinearRegression(data, epochs=4000, debug=False)
 
 if __name__ == '__main__':
     main()
