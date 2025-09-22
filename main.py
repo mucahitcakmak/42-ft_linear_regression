@@ -1,7 +1,13 @@
 import json
+import os
 
 def checkModelFile(file_name="model.json"):
     try:
+        if (os.path.exists(file_name) == False):
+            params = {"theta0": 0, "theta1": 0}
+            with open("model.json", "w") as f:
+                json.dump(params, f)
+
         with open (file_name, "r") as f:
             params = json.load(f)
             theta0, theta1 = params["theta0"], params["theta1"]
@@ -12,8 +18,6 @@ def checkModelFile(file_name="model.json"):
             raise ValueError("Parameters 'theta0' and 'theta1' must be numeric (int or float).")
         
         return theta0, theta1
-    except FileNotFoundError:
-        raise FileNotFoundError("❌ File not found")
     except json.JSONDecodeError:
         raise ValueError("❌ Invalid JSON format")
     except Exception as e:
@@ -24,14 +28,18 @@ def checkInput(input):
         input = float(input)
         return input
     except (ValueError, TypeError):
-        raise ValueError("Input must be numeric (int or float).")
+        raise ValueError("❌ Unexpected error: Input must be numeric (int or float).")
 
 def main():
-    theta0, theta1 = checkModelFile()
+    try:
+        theta0, theta1 = checkModelFile()
 
-    mileage = checkInput(input("Enter your car mileage: "))
+        mileage = checkInput(input("Enter your car mileage: "))
 
-    print("Predict: ", (theta1 * mileage) + theta0) # normalizasyon hatasından sonra burası düzelecek değişiklik diğer dosyada yapılmalı
+        estimated_price = (theta1 * mileage) + theta0
+        print("Predict: ", round(estimated_price, 2))
+    except Exception as e:
+        print(e)
     
     
 if __name__ == '__main__':

@@ -1,6 +1,5 @@
 import json
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 
 class LinearRegression:
@@ -27,9 +26,15 @@ class LinearRegression:
             self.normalized_x.append( (float(self.X[i]) - min_x) / (max_x - min_x) )
             self.normalized_y.append( (float(self.Y[i]) - min_y) / (max_y - min_y) )
     
-    def denormalize_Y(self, number):
+    def denormalize_W_and_B(self):
+        max_x, min_x = max(self.X), min(self.X)
         max_y, min_y = max(self.Y), min(self.Y)
-        return number * (max_y - min_y) + min_y
+
+        # Rescale slope
+        self.theta1 = (max_y - min_y) / (max_x - min_x) * self.theta1
+
+        # Rescale intercept
+        self.theta0 = (max_y - min_y) * self.theta0 + min_y - self.theta1 * min_x
 
     def estimatePrice(self, mileage):
         return (mileage * self.theta1) + self.theta0
@@ -54,6 +59,8 @@ class LinearRegression:
                 cost = sum((self.estimatePrice(self.normalized_x[i]) - self.normalized_y[i])**2 for i in range(self.m)) / (2 * self.m)
                 print(f"Epoch {epoch}, Cost: {cost:.4f}, θ0={self.theta0:.4f}, θ1={self.theta1:.4f}")
 
+        self.denormalize_W_and_B()
+
         print("Final params:")
         print(f"θ0={self.theta0}, θ1={self.theta1}")
 
@@ -67,9 +74,7 @@ class LinearRegression:
         plt.scatter(self.X.values, self.Y.values, color="blue", marker="o")
         
         # Regression
-        y_pred_norm = [self.estimatePrice(x) for x in self.normalized_x]
-        for yp in y_pred_norm:
-            self.y_pred.append(self.denormalize_Y(yp))
+        self.y_pred = [self.estimatePrice(x) for x in self.X.values]
         plt.plot(self.X.values, self.y_pred, color="red", label="Linear Regression Model")
 
         plt.title("")
@@ -78,8 +83,7 @@ class LinearRegression:
         plt.show()
 
     def predict(self, km: float):
-        # normalizasyon hatasını gidermem gerekiyor diğer dosyada normalizasyon adımlarını tekrar yapmamak için düzenleme gerekiyor
-        pass
+        print("Predict: ", round(self.estimatePrice(km), 2))
 
 def main():
     data = pd.read_csv("data/data.csv")
