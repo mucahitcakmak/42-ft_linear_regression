@@ -15,6 +15,7 @@ class LinearRegression:
         self.y_pred = []
         self.debugMode = debug
         self.cost = 0.0
+        self.r2score = 0.0
         self.normalize()
         self.train(epochs)
         self.saveParameters()
@@ -31,14 +32,22 @@ class LinearRegression:
         max_x, min_x = max(self.X), min(self.X)
         max_y, min_y = max(self.Y), min(self.Y)
 
-        # Rescale slope
+        # Rescale slope and intercept
         self.theta1 = (max_y - min_y) / (max_x - min_x) * self.theta1
-
-        # Rescale intercept
         self.theta0 = (max_y - min_y) * self.theta0 + min_y - self.theta1 * min_x
 
     def estimatePrice(self, mileage):
         return (mileage * self.theta1) + self.theta0
+
+    def computeR2Score(self):
+        ssr, sst, mean_y = 0, 0, self.Y.mean()
+    
+        for i in range(self.m):
+            ssr += (self.estimatePrice(self.X[i]) - self.Y[i]) ** 2
+            sst += (mean_y - self.Y[i]) ** 2
+        
+        self.r2score = 1 - (ssr / sst)
+        
 
     def computeGradients(self):
         grad0, grad1 = 0.0, 0.0
@@ -56,14 +65,15 @@ class LinearRegression:
             self.theta0 -= self.learning_rate * grad0
             self.theta1 -= self.learning_rate * grad1
             
-            self.cost = sum((self.estimatePrice(self.normalized_x[i]) - self.normalized_y[i])**2 for i in range(self.m)) / (2 * self.m)
+            self.cost = sum((self.estimatePrice(self.normalized_x[i]) - self.normalized_y[i])**2 for i in range(self.m)) / (2 * self.m )
             if self.debugMode and epoch % 200 == 0:
                 print(f"Epoch {epoch}, Cost: {self.cost:.4f}, θ0={self.theta0:.4f}, θ1={self.theta1:.4f}")
 
         self.denormalize_W_and_B()
+        self.computeR2Score()
 
         print("Final params:")
-        print(f"θ0={self.theta0}, θ1={self.theta1}")
+        print(f"R2Score={self.r2score}, θ0={self.theta0}, θ1={self.theta1}")
 
     def saveParameters(self):
         params = {"theta0": self.theta0, "theta1": self.theta1}
@@ -71,8 +81,6 @@ class LinearRegression:
             json.dump(params, f)
     
     def showDataOnGraph(self, epochs):
-        import matplotlib.pyplot as plt
-
         # Scatter plot: Original data
         plt.scatter(self.X.values, self.Y.values, color="blue", marker="o", label="Actual Data")
         
@@ -85,7 +93,7 @@ class LinearRegression:
         plt.xlabel("Car Mileage")
         plt.ylabel("Price")
 
-        textstr = f"Epoch: {epochs}\nCost: {self.cost:.4f}"
+        textstr = f"Epoch: {epochs}\nR2Score: {self.r2score:.4f}"
         plt.gcf().text(0.02, 0.95, textstr, fontsize=10, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5))
         plt.legend()
         plt.show()
