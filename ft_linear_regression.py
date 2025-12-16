@@ -4,13 +4,18 @@ import matplotlib.pyplot as plt
 
 class LinearRegression:
     
-    def __init__(self, data, epochs=1000, debug=False):
+    def __init__(self, X_data, Y_data, epochs=1000, debug=False):
         self.learning_rate = 0.01
         self.theta0 = 0.0  # bias
         self.theta1 = 0.0  # weight
-        self.m = len(data) # data length
-        self.X = data["km"]
-        self.Y = data["price"]
+
+        # Check for NaN values
+        if X_data.isna().any() or Y_data.isna().any():
+            raise ValueError("❌ X_data and Y_data cannot contain NaN values")
+        self.m = len(X_data) # data length
+
+        self.X = X_data
+        self.Y = Y_data
         self.normalized_x, self.normalized_y = [], []
         self.y_pred = []
         self.debugMode = debug
@@ -47,7 +52,6 @@ class LinearRegression:
             sst += (mean_y - self.Y[i]) ** 2
         
         self.r2score = 1 - (ssr / sst)
-        
 
     def computeGradients(self):
         grad0, grad1 = 0.0, 0.0
@@ -98,12 +102,15 @@ class LinearRegression:
         plt.legend()
         plt.show()
 
-    def predict(self, km: float):
-        print("Predict: ", round(self.estimatePrice(km), 2))
+    def predict(self, x_test: float):
+        print("Predict: ", round(self.estimatePrice(x_test), 2))
 
 def main():
-    data = pd.read_csv("data/data.csv")
-    LinearRegression(data, epochs=4000, debug=False)
+    try:
+        data = pd.read_csv("data/data.csv")
+        LinearRegression(data["km"], data["price"], epochs=4000, debug=False)
+    except Exception as e:
+        print(e)
 
 if __name__ == '__main__':
     main()
